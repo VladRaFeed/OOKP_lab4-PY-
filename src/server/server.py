@@ -3,8 +3,8 @@ import threading
 import pickle
 
 user_notes = {}
-
 MAX_NOTES = 5
+server_running = True
 
 def handle_client(conn, addr):
     print(f"[З'єднано] Клієнт {addr}")
@@ -50,16 +50,39 @@ def handle_client(conn, addr):
         conn.close()
         print(f"[Відключено] Клієнт {addr}")
 
+def console_listener(server_socket):
+    global server_running
+    while server_running:
+        command = input()
+        if command.strip().lower() == "stop":
+            print("[Завершення] Сервер завершує роботу...")
+            server_running = False
+            # створити фейкове з'єднання, щоб вийти з accept()
+            try:
+                socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(('localhost', 8888))
+            except:
+                pass
+            server_socket.close()
+            break
+
 def start_server():
+    global server_running
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind(('localhost', 8888))
     server.listen(5)
-    print("[Сервер запущено] Очікування підключень...")
+    print("[Сервер запущено] Введіть 'stop' щоб завершити роботу.")
 
-    while True:
-        conn, addr = server.accept()
+    threading.Thread(target=console_listener, args=(server,), daemon=True).start()
+
+    while server_running:
+        try:
+            conn, addr = server.accept()
+        except OSError:
+            break  # сервер закрито
         thread = threading.Thread(target=handle_client, args=(conn, addr))
         thread.start()
+
+    print("[Сервер завершено]")
 
 if __name__ == "__main__":
     start_server()
