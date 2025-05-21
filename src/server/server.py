@@ -57,7 +57,6 @@ def console_listener(server_socket):
         if command.strip().lower() == "stop":
             print("[Завершення] Сервер завершує роботу...")
             server_running = False
-            # створити фейкове з'єднання, щоб вийти з accept()
             try:
                 socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(('localhost', 8888))
             except:
